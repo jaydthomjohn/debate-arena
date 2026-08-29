@@ -57,6 +57,10 @@ io.on("connection", (socket) => {
     rooms.get(roomId)?.setReady(socket.id, ready);
   });
 
+  socket.on("room:play-again", ({ roomId }) => {
+    rooms.get(roomId)?.requestPlayAgain(socket.id);
+  });
+
   // ---- WebRTC signaling relay (pure pass-through, no media touches server) --
 
   socket.on("webrtc:offer", ({ roomId, targetId, sdp }) => {
