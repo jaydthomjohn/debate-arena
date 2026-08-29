@@ -92,7 +92,7 @@ function PlayerCard({ role, name, scores, isWinner, revealDelay }) {
   );
 }
 
-export default function ScorecardOverlay({ verdict, players, isJudging }) {
+export default function ScorecardOverlay({ verdict, players, isJudging, myRole, onPlayAgain }) {
   const player1SocketId = Object.keys(players).find((id) => players[id].role === "player1");
   const player2SocketId = Object.keys(players).find((id) => players[id].role === "player2");
   const p1Name = player1SocketId ? players[player1SocketId].name : "Player 1";
@@ -146,6 +146,20 @@ export default function ScorecardOverlay({ verdict, players, isJudging }) {
               revealDelay={0.5}
             />
           </div>
+
+          {myRole !== "spectator" && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.4 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onPlayAgain}
+              className="mt-8 font-display font-bold px-8 py-3 rounded-xl border-2 border-gold text-gold"
+              style={{ boxShadow: "0 0 20px rgba(255,207,77,0.4)" }}
+            >
+              PLAY AGAIN
+            </motion.button>
+          )}
         </>
       )}
     </motion.div>
