@@ -24,7 +24,7 @@ export default function App() {
   const [name, setName] = useState("");
   const [joined, setJoined] = useState(false);
 
-  const { state, myRole, setReady } = useRoomState(joined ? roomId : null, {
+  const { state, myRole, setReady, playAgain } = useRoomState(joined ? roomId : null, {
     name,
     asSpectator: spectatorParam,
   });
@@ -113,6 +113,8 @@ export default function App() {
             verdict={state.verdict}
             players={state.players}
             isJudging={state.phase === PHASES.JUDGING}
+            myRole={myRole}
+            onPlayAgain={playAgain}
           />
         )}
       </AnimatePresence>
