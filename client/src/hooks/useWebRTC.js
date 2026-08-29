@@ -14,8 +14,26 @@ import { socket } from "../lib/socket";
 
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
-  // Add a TURN server here for reliability behind restrictive NATs:
-  // { urls: "turn:your.turn.server:3478", username: "...", credential: "..." },
+  // Free public TURN relay (Open Relay Project) — needed whenever the two
+  // peers are on different networks and STUN alone can't punch through
+  // (this is the #1 cause of "everything connects but no video/audio").
+  // Swap for your own TURN server (e.g. Twilio, metered.ca paid tier) for
+  // production reliability — this free one is rate-limited and best-effort.
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
 ];
 
 export function useWebRTC({ roomId, myRole, muted }) {
@@ -55,6 +73,12 @@ export function useWebRTC({ roomId, myRole, muted }) {
       if (e.candidate) socket.emit("webrtc:ice-candidate", { targetId, candidate: e.candidate });
     };
     pc.ontrack = (e) => onTrack(e.streams[0]);
+    // Debug visibility: open the browser console (F12) and watch this log.
+    // "connected" = media should be flowing. "failed"/"disconnected" almost
+    // always means TURN relay didn't work or is blocked by a firewall.
+    pc.oniceconnectionstatechange = () => {
+      console.log(`[WebRTC] ICE connection state (peer ${targetId}):`, pc.iceConnectionState);
+    };
     return pc;
   }, []);
 
