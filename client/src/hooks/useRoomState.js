@@ -50,5 +50,7 @@ export function useRoomState(roomId, { name, asSpectator } = {}) {
     [roomId]
   );
 
-  return { state, myRole, connected, setReady };
+  const playAgain = useCallback(() => socket.emit("room:play-again", { roomId }), [roomId]);
+
+  return { state, myRole, connected, setReady, playAgain };
 }
