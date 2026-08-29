@@ -39,6 +39,7 @@ class RoomStateMachine {
     this.activeRole = null; // 'player1' | 'player2'
     this.transcript = []; // { round, speaker, text }
     this.verdict = null;
+    this._opponentLeftNotice = false; // one-shot flag, see removeParticipant()
 
     this._interval = null;
   }
@@ -87,8 +88,20 @@ class RoomStateMachine {
   }
 
   removeParticipant(socketId) {
+    const wasPlayer = !!this.players[socketId];
+    const matchInProgress =
+      this.phase === PHASES.PREP || this.phase === PHASES.ROUND || this.phase === PHASES.JUDGING;
+
     delete this.players[socketId];
     this.spectators.delete(socketId);
+
+    // A player leaving mid-match ends it immediately instead of leaving the
+    // room stuck waiting on a timer/verdict that can never finish properly.
+    if (wasPlayer && matchInProgress) {
+      this._resetMatchData();
+      this._opponentLeftNotice = true; // one-shot flag, consumed on next broadcast
+    }
+
     this._emit();
   }
 
@@ -197,6 +210,7 @@ class RoomStateMachine {
 
   _emit() {
     this.onStateChange(this.getPublicState());
+    this._opponentLeftNotice = false; // consumed — only fires once per departure
   }
 
   getPublicState() {
@@ -213,6 +227,7 @@ class RoomStateMachine {
       ),
       spectatorCount: this.spectators.size,
       verdict: this.verdict,
+      opponentLeft: this._opponentLeftNotice,
     };
   }
 }
