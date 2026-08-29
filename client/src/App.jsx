@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRoomState } from "./hooks/useRoomState";
 import { useWebRTC } from "./hooks/useWebRTC";
@@ -40,6 +40,17 @@ export default function App() {
     active: myRole && state ? state.phase === PHASES.ROUND && state.activeRole === myRole : false,
   });
 
+  // Brief banner when the server flags that a player just left mid-match —
+  // the room itself has already snapped back to LOBBY by the time this fires.
+  const [leftBanner, setLeftBanner] = useState(false);
+  useEffect(() => {
+    if (state?.opponentLeft) {
+      setLeftBanner(true);
+      const t = setTimeout(() => setLeftBanner(false), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [state?.opponentLeft]);
+
   if (!joined) {
     return (
       <div className="min-h-screen max-w-3xl mx-auto">
@@ -79,6 +90,19 @@ export default function App() {
           room: {roomId} · {state.spectatorCount} watching
         </span>
       </header>
+
+      <AnimatePresence>
+        {leftBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-center text-sm font-mono py-2 px-4 rounded-lg bg-p2/10 border border-p2 text-p2"
+          >
+            Your opponent left — the match ended. Ready up again whenever you're set.
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {state.phase === PHASES.LOBBY && (
         <LobbyScreen state={state} myRole={myRole} onReady={setReady} name={name} setName={setName} joined />
