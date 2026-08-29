@@ -46,11 +46,39 @@ class RoomStateMachine {
   // ---- player management -------------------------------------------------
 
   addPlayer(socketId, name) {
+    // If a fresh join lands on a room that's still showing a finished match
+    // (e.g. someone reopens the link), snap the match data back to a clean
+    // slate so nobody gets stuck staring at the old scorecard/round.
+    if (this.phase === PHASES.JUDGING || this.phase === PHASES.COMPLETE) {
+      this._resetMatchData();
+    }
     const takenRoles = new Set(Object.values(this.players).map((p) => p.role));
     const role = takenRoles.has("player1") ? "player2" : "player1";
     this.players[socketId] = { role, ready: false, name: name || role };
     this._emit();
     return role;
+  }
+
+  /** Lets a connected player manually restart without anyone refreshing. */
+  requestPlayAgain(socketId) {
+    if (!this.players[socketId]) return;
+    if (this.phase !== PHASES.COMPLETE) return;
+    this._resetMatchData();
+    this._emit();
+  }
+
+  _resetMatchData() {
+    this._stopTicking();
+    this.phase = PHASES.LOBBY;
+    this.topic = null;
+    this.secondsRemaining = 0;
+    this.round = 0;
+    this.activeRole = null;
+    this.transcript = [];
+    this.verdict = null;
+    Object.values(this.players).forEach((p) => {
+      p.ready = false;
+    });
   }
 
   addSpectator(socketId) {
