@@ -20,8 +20,16 @@ export default function PlayerVideoFrame({ role, name, stream, isActive, isMuted
   const accent = ACCENTS[role];
 
   useEffect(() => {
-    if (videoRef.current && stream) videoRef.current.srcObject = stream;
-  }, [stream]);
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      // Some browsers block autoplay of an unmuted <video> until there's
+      // user interaction on the page. If that happens this throws quietly
+      // in the console rather than failing silently with no clue why.
+      videoRef.current.play().catch((err) => {
+        console.warn(`[Video] Autoplay blocked for ${role} — click anywhere on the page once.`, err);
+      });
+    }
+  }, [stream, role]);
 
   return (
     <motion.div
